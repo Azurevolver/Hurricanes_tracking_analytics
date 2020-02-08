@@ -112,7 +112,9 @@ def process_storm_data(file_name, result_dict):
 
                 current_storm_id = storm_dict["startDate"] + storm_dict["stormID"] + storm_dict["name"]
                 if current_storm_id not in result_dict:
-                    result_dict[current_storm_id] = [storm_dict["startDate"], storm_dict["stormID"],
+                    date_string = storm_dict["startDate"]
+                    date_string = date_string[0:4] + "/" + date_string[4:6] + "/" + date_string[6:]
+                    result_dict[current_storm_id] = [date_string, storm_dict["stormID"],
                                                      storm_dict["name"], round(sum(storm_dict[Distance_List]), 2)]
                 else:
                     print("[DEBUG] id is duplicated")
