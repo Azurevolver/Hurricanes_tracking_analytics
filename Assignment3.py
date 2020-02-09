@@ -57,7 +57,7 @@ Question_2 = "Question_2"
 "====================================================================================================================="
 "MARK: Function definition"
 
-def process_storm_data(file_name, result_dict):
+def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = -999, target_lon = -999):
     """
     The main function to read the raw data line by line.
     Meanwhile, the function will find and calculate the five questions in the assignment - ID, name, start date, end date,
@@ -73,13 +73,15 @@ def process_storm_data(file_name, result_dict):
         storm_dict = reset_storm_dict()
 
         current_line_count = 0
+        need_to_check_storm_hit = True
+
         for line in input_file:
 
             # Memorize the id and name, and decide how many lines need to read
             if line[0:2].isalpha():
-                # 1. print the id and name --> get the storm id and name?
+                # 1. get the id and name
                 # print('Storm system ID is ' , line[0:4])
-                storm_dict["stormID"] = line[0:4] # Isn't the storm ID the first 8 characters?
+                storm_dict["stormID"] = line[0:8]
 
                 if line.find('UNNAMED', 18, 28) == -1:
                     # print('the name of the storm is ', line[18:28])
@@ -128,10 +130,25 @@ def process_storm_data(file_name, result_dict):
 
             storm_dict["endDate"] = line[0:8]
 
-            # 3. The highest Maximum sustained wind (in knots) and when it first occurred (date & time) --> get Maximum sustained wind (in knots)?
+            # 3. The highest Maximum sustained wind (in knots)
             current_sustained_wind = int(line[38:41])
             if current_sustained_wind != "-99" and current_sustained_wind > storm_dict["maxSustainedWind"]:
                 storm_dict["maxSustainedWind"] = current_sustained_wind
+
+            # 64 kt wind radii maximum extent in each quadrant
+            storm_dict["NEradii"] = int(line[97:101])
+            storm_dict["SEradii"] = int(line[103:107])
+            storm_dict["SWradii"] = int(line[109:113])
+            storm_dict["NWradii"] = int(line[115:119])
+
+            # check whether the storm hit the location
+            if target_lat != -999 and target_lon != -999 and need_to_check_storm_hit:
+                did_hit = did_storm_hit_location(geod, storm_dict, target_lat, target_lon)
+                if did_hit:
+                    impact_storms.append(storm_dict["stormID"]+storm_dict["name"])
+                    # print("impact_storms",impact_storms)
+                    need_to_check_storm_hit = False
+                    # print("need_to_check_storm_hit",need_to_check_storm_hit)
 
             # in the end of each storm section
             if 0 == current_line_count:
@@ -140,7 +157,7 @@ def process_storm_data(file_name, result_dict):
                 current_storm_id = storm_dict["startDate"] + storm_dict["stormID"] + storm_dict["name"]
 
                 average_speed = 0.0
-                if len(storm_dict[Time_List]) is not 1:
+                if len(storm_dict[Time_List]) != 1:
                     average_speed = round((sum(storm_dict[Distance_List]) / sum(storm_dict[Time_List])), 2)
 
                 if current_storm_id not in result_dict:
@@ -156,12 +173,13 @@ def process_storm_data(file_name, result_dict):
                 else:
                     print("[DEBUG] id is duplicated")
 
+                need_to_check_storm_hit = True
                 storm_dict = reset_storm_dict()
 
 
 def output_storm_result(result_dict, question_type):
     """
-    Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library --> for the first Q?
+    Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library
     :param result_dict:
     :return: None
     """
@@ -173,7 +191,7 @@ def output_storm_result(result_dict, question_type):
     stop_point = 4
 
     if question_type == Question_1:
-        result_table.field_names = ["Date", "Storm ID", "Name", "Distance"]   # Do we need to print date?
+        result_table.field_names = ["Date", "Storm ID", "Name", "Distance"]
     elif question_type == Question_2:
         start_point = 4
         stop_point = 6
@@ -249,47 +267,6 @@ def get_longitude(line: str) -> float:
     return longitude
 
 
-def print_storm_detail(storm_dict): # for debug??
-    """
-    Print each storm detail on the console
-
-    :param storm_dict:  a customized dictionary for memorize the necessary storm data,
-    storm_dict details is elaborated in the "reset_storm_dict" function
-    :return: None
-    """
-    print("------------------------------------------------------------------------------------")
-    print("The ID of the storm is ", storm_dict["stormID"])
-
-    if storm_dict["name"] != "UNNAMED":
-        print("The name of the storm is ", storm_dict["name"])
-    else:
-        print("The storm does not have a name")
-
-    print_storm_date(storm_dict["startDate"], True)
-    print_storm_date(storm_dict["endDate"], False)
-
-    print("The maximum sustained wind is ", storm_dict["maxSustainedWind"], " kt")
-
-    # for debug
-    # print(storm_dict)
-    # print("The total distance of the storm traveled is ", storm_dict[Distance_List])
-
-
-def print_storm_date(date_string, is_start_date): # for debug??
-    """
-    Print out the date on the console with "YYYY/MM/DD" format
-
-    :param date_string: the date string with "YYYYMMDD" format
-    :param is_start_date: a boolean value identify whether the date is start date
-    :return: None
-    """
-    date_type = "end"
-    if is_start_date:
-        date_type = "start"
-
-    print("The ", date_type, " date of the storm is ", date_string[0:4], "/", date_string[4:6], "/", date_string[6:])
-
-
 def calculate_the_speed(distance, hours):
     if hours == 0: return 0
     speed = distance / hours
@@ -344,8 +321,6 @@ def reset_storm_dict():
         Current_Time_mins: 0,
         Time_List: [],
         Speed_List:[],
-        Current_Latitude: -999.0, # Why not use string as the key directly?
-        Current_Longitude: -999.0, # Why not use string as the key directly?
         "NEradii": -999, # to be added into "process_storm_data" function
         "SEradii": -999, # to be added into "process_storm_data" function
         "SWradii": -999, # to be added into "process_storm_data" function
@@ -353,8 +328,7 @@ def reset_storm_dict():
     }
     return storm_dict
 
-'''
-# not finished yet
+
 def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_longitude: float) -> bool:
     """
     Determine whether the storm hit the location
@@ -370,10 +344,19 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
                                 location_latitude, location_longitude)['s12'] / 1852.0, 2)
     if loc_storm_distance <= 5 and storm_dict["maxSustainedWind"] >= 64:
         return True
-    else:
-        location_quadrant = find_location_quadrant(storm_latitude, storm_longitude, location_latitude: float, location_longitude: float)
-        if location_quadrant == "NE" and :
-'''
+
+    location_quadrant = find_location_quadrant(storm_latitude, storm_longitude, location_latitude, location_longitude)
+    if location_quadrant == "NE" and loc_storm_distance <= storm_dict["NEradii"]:
+        return True
+    elif location_quadrant == "SE" and loc_storm_distance <= storm_dict["SEradii"]:
+        return True
+    elif location_quadrant == "SW" and loc_storm_distance <= storm_dict["SWradii"]:
+        return True
+    elif location_quadrant == "NW" and loc_storm_distance <= storm_dict["NWradii"]:
+        return True
+
+    return False
+
 
 
 def find_location_quadrant(storm_latitude: float, storm_longitude: float, location_latitude: float, location_longitude: float) -> str:
@@ -391,12 +374,18 @@ def find_location_quadrant(storm_latitude: float, storm_longitude: float, locati
     quadrant += "E" if longitude_diff > 0 else "W"
     return quadrant
 
-
-
+def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
+    result_dict = {}
+    impact_storms = []
+    process_storm_data("hurdat2-1851-2018-120319.txt", result_dict, impact_storms, lat, lon)
+    process_storm_data("hurdat2-nepac-1949-2018-122019.txt", result_dict, impact_storms, lat, lon)
+    print(impact_storms)
+    return impact_storms
 "====================================================================================================================="
 "MARK: Program execution"
 #
-result_dict = {}
-process_storm_data("hurdat2-1851-2018-120319.txt", result_dict)
-output_storm_result(result_dict, Question_1)
-output_storm_result(result_dict, Question_2)
+#result_dict = {}
+#process_storm_data("hurdat2-1851-2018-120319.txt", result_dict)
+# output_storm_result(result_dict, Question_1)
+# output_storm_result(result_dict, Question_2)
+find_hurricanes_hitting_location(32.31, -64.75)
