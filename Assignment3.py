@@ -51,6 +51,9 @@ Current_Time_mins = "current_time"
 Time_List = "Time_List"
 Speed_List = "Speed_List"
 
+Question_1 = "Question_1"
+Question_2 = "Question_2"
+
 "====================================================================================================================="
 "MARK: Function definition"
 
@@ -156,7 +159,7 @@ def process_storm_data(file_name, result_dict):
                 storm_dict = reset_storm_dict()
 
 
-def output_storm_result(result_dict, stop_point):
+def output_storm_result(result_dict, question_type):
     """
     Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library --> for the first Q?
     :param result_dict:
@@ -164,16 +167,21 @@ def output_storm_result(result_dict, stop_point):
     """
 
     result_table = PrettyTable()
+
     out_put_title = 'Assignment_3_question_1.txt'
-    if stop_point == 4:
+    start_point = 3
+    stop_point = 4
+
+    if question_type == Question_1:
         result_table.field_names = ["Date", "Storm ID", "Name", "Distance"]   # Do we need to print date?
-    elif stop_point == 5:
+    elif question_type == Question_2:
+        start_point = 4
+        stop_point = 6
         result_table.field_names = ["Date", "Storm ID", "Name", "Max Speed", "Avg Speed"]
         out_put_title = 'Assignment_3_question_2.txt'
 
-
     for storm in result_dict:
-        each_storm_data = result_dict[storm][:stop_point]
+        each_storm_data = result_dict[storm][0:3] + result_dict[storm][start_point:stop_point]
         result_table.add_row(each_storm_data)
 
     print(result_table)
@@ -387,8 +395,8 @@ def find_location_quadrant(storm_latitude: float, storm_longitude: float, locati
 
 "====================================================================================================================="
 "MARK: Program execution"
-# hurdat2-1851-2018-120319
+#
 result_dict = {}
-process_storm_data("Test_Data.txt", result_dict)
-output_storm_result(result_dict, 4)
-output_storm_result(result_dict, 5)
+process_storm_data("hurdat2-1851-2018-120319.txt", result_dict)
+output_storm_result(result_dict, Question_1)
+output_storm_result(result_dict, Question_2)
