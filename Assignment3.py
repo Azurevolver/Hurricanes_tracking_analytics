@@ -38,7 +38,7 @@ Author:
 "MARK: Library"
 from geographiclib.geodesic import Geodesic
 from prettytable import PrettyTable
-
+# import pdb
 "====================================================================================================================="
 "MARK: Function definition"
 
@@ -46,7 +46,12 @@ Current_Latitude = "current_latitude"
 Current_Longitude = "current_longitude"
 Distance_List = "Distance_List"
 
-def process_storm_data(file_name, result_dict):
+Current_Date = "current_date"
+Current_Time_mins = "current_time"
+Time_List = "Time_List"
+Speed_List = "Speed_List"
+
+def process_storm_data(file_name, result_dict, result_dict2):
     """
     The main function to read the raw data line by line.
     Meanwhile, the function will find and calculate the five questions in the assignment - ID, name, start date, end date,
@@ -95,6 +100,24 @@ def process_storm_data(file_name, result_dict):
             storm_dict[Current_Latitude] = current_latitude
             storm_dict[Current_Longitude] = current_longitude
 
+
+            # for speed calculation:
+            current_date, current_time = line[0:8], line[10:14]
+
+            hours = calculate_the_time(storm_dict, current_date, current_time)
+            speed = round(calculate_the_speed(distance, hours), 2)
+            # print(hours, distance, speed)
+
+            # Add up the total times
+            storm_dict[Time_List].append(hours)
+            storm_dict[Speed_List].append(speed)
+
+            # Set the current time
+            storm_dict[Current_Date] = current_date
+            storm_dict[Current_Time_mins] = current_time
+
+
+
             # 2. start date and end date of the storm
             if storm_dict["startDate"] is None:
                 storm_dict["startDate"] = line[0:8]
@@ -116,13 +139,17 @@ def process_storm_data(file_name, result_dict):
                     date_string = date_string[0:4] + "/" + date_string[4:6] + "/" + date_string[6:]
                     result_dict[current_storm_id] = [date_string, storm_dict["stormID"],
                                                      storm_dict["name"], round(sum(storm_dict[Distance_List]), 2)]
+                    result_dict2[current_storm_id] = [date_string, storm_dict["stormID"],
+                                                     storm_dict["name"],
+                                                     round(max(storm_dict[Speed_List]), 2),
+                                                     round((sum(storm_dict[Speed_List])/len(storm_dict[Speed_List])), 2)]
                 else:
                     print("[DEBUG] id is duplicated")
 
                 storm_dict = reset_storm_dict()
 
 
-def output_storm_result(result_dict):
+def output_storm_result(result_dict, result_dict2):
     """
     Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library --> for the first Q?
     :param result_dict:
@@ -139,6 +166,21 @@ def output_storm_result(result_dict):
 
     with open('Assignment_3_question_1.txt', 'w') as output_file:
         output_file.write(result_table.get_string())
+
+
+
+    result_table_2 = PrettyTable()
+    result_table_2.field_names = ["Date", "Storm ID", "Name", "Max Speed", "Avg Speed"]
+
+    for storm in result_dict2:
+        each_storm_data = result_dict2[storm]
+        result_table_2.add_row(each_storm_data)
+
+    print(result_table_2)
+
+    with open('Assignment_3_question_2.txt', 'w') as output_file_2:
+        output_file_2.write(result_table_2.get_string())
+
 
 
 def calculate_the_distance(geod, storm_dict, current_latitude: float, current_longitude: float) -> float:
@@ -241,6 +283,42 @@ def print_storm_date(date_string, is_start_date): # for debug??
     print("The ", date_type, " date of the storm is ", date_string[0:4], "/", date_string[4:6], "/", date_string[6:])
 
 
+def calculate_the_speed(distance, hours):
+    if hours == 0: return 0
+    speed = distance / hours
+
+    return speed
+
+
+def get_hours(current_date, current_time, last_date, last_time):
+    '''
+    input: current_time
+    output: hours between rows
+    '''
+    current_hour, last_hour = int(current_time[0:2]), int(last_time[0:2])
+    current_minute, last_minute = int(current_time[2:4]), int(last_time[2:4])
+
+    hours = (current_hour - last_hour) + (current_minute - last_minute)/60
+
+    if current_date != last_date:
+        hours = hours + 24
+
+    return hours
+
+
+def calculate_the_time(storm_dict, current_date, current_time):
+
+    last_date = storm_dict[Current_Date]
+    last_time = storm_dict[Current_Time_mins]
+
+    if int(last_date) == 0:
+        return 0
+
+
+    return get_hours(current_date, current_time, last_date, last_time)
+
+
+
 def reset_storm_dict():
     """
     Reset the storm dictionary to original state
@@ -252,16 +330,23 @@ def reset_storm_dict():
         "startDate": None,
         "endDate": None,
         "maxSustainedWind": 0,
+        Current_Latitude: -999.0,
+        Current_Longitude: -999.0,
+        Distance_List: [],
+        Current_Date: 0,
+        Current_Time_mins: 0,
+        Time_List: [],
+        Speed_List:[],
         Current_Latitude: -999.0, # Why not use string as the key directly?
         Current_Longitude: -999.0, # Why not use string as the key directly?
-        "NEradii": -999 # to be added into "process_storm_data" function
-        "SEradii": -999 # to be added into "process_storm_data" function
-        "SWradii": -999 # to be added into "process_storm_data" function
+        "NEradii": -999, # to be added into "process_storm_data" function
+        "SEradii": -999, # to be added into "process_storm_data" function
+        "SWradii": -999, # to be added into "process_storm_data" function
         "NWradii": -999 # to be added into "process_storm_data" function
-        Distance_List: []
     }
     return storm_dict
 
+'''
 # not finished yet
 def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_longitude: float) -> bool:
     """
@@ -281,7 +366,7 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
     else:
         location_quadrant = find_location_quadrant(storm_latitude, storm_longitude, location_latitude: float, location_longitude: float)
         if location_quadrant == "NE" and :
-
+'''
 
 
 def find_location_quadrant(storm_latitude: float, storm_longitude: float, location_latitude: float, location_longitude: float) -> str:
@@ -305,5 +390,6 @@ def find_location_quadrant(storm_latitude: float, storm_longitude: float, locati
 "MARK: Program execution"
 
 result_dict = {}
-process_storm_data("hurdat2-1851-2018-120319.txt", result_dict)
-output_storm_result(result_dict)
+result_dict2 = {}
+process_storm_data("hurdat2-1851-2018-120319.txt", result_dict, result_dict2)
+output_storm_result(result_dict, result_dict2)
