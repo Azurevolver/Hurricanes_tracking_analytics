@@ -40,7 +40,7 @@ from geographiclib.geodesic import Geodesic
 from prettytable import PrettyTable
 # import pdb
 "====================================================================================================================="
-"MARK: Function definition"
+"MARK: Constant"
 
 Current_Latitude = "current_latitude"
 Current_Longitude = "current_longitude"
@@ -51,7 +51,10 @@ Current_Time_mins = "current_time"
 Time_List = "Time_List"
 Speed_List = "Speed_List"
 
-def process_storm_data(file_name, result_dict, result_dict2):
+"====================================================================================================================="
+"MARK: Function definition"
+
+def process_storm_data(file_name, result_dict):
     """
     The main function to read the raw data line by line.
     Meanwhile, the function will find and calculate the five questions in the assignment - ID, name, start date, end date,
@@ -116,8 +119,6 @@ def process_storm_data(file_name, result_dict, result_dict2):
             storm_dict[Current_Date] = current_date
             storm_dict[Current_Time_mins] = current_time
 
-
-
             # 2. start date and end date of the storm
             if storm_dict["startDate"] is None:
                 storm_dict["startDate"] = line[0:8]
@@ -134,53 +135,51 @@ def process_storm_data(file_name, result_dict, result_dict2):
                 # print_storm_detail(storm_dict)
 
                 current_storm_id = storm_dict["startDate"] + storm_dict["stormID"] + storm_dict["name"]
+
+                average_speed = 0.0
+                if len(storm_dict[Time_List]) is not 1:
+                    average_speed = round((sum(storm_dict[Distance_List]) / sum(storm_dict[Time_List])), 2)
+
                 if current_storm_id not in result_dict:
                     date_string = storm_dict["startDate"]
                     date_string = date_string[0:4] + "/" + date_string[4:6] + "/" + date_string[6:]
-                    result_dict[current_storm_id] = [date_string, storm_dict["stormID"],
-                                                     storm_dict["name"], round(sum(storm_dict[Distance_List]), 2)]
-                    result_dict2[current_storm_id] = [date_string, storm_dict["stormID"],
+                    result_dict[current_storm_id] = [date_string,
+                                                     storm_dict["stormID"],
                                                      storm_dict["name"],
-                                                     round(max(storm_dict[Speed_List]), 2),
-                                                     round((sum(storm_dict[Speed_List])/len(storm_dict[Speed_List])), 2)]
+                                                     round(sum(storm_dict[Distance_List]), 2),  # distance list
+                                                     round(max(storm_dict[Speed_List]), 2),  # max of speed
+                                                     average_speed
+                                                     ]
                 else:
                     print("[DEBUG] id is duplicated")
 
                 storm_dict = reset_storm_dict()
 
 
-def output_storm_result(result_dict, result_dict2):
+def output_storm_result(result_dict, stop_point):
     """
     Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library --> for the first Q?
     :param result_dict:
     :return: None
     """
+
     result_table = PrettyTable()
-    result_table.field_names = ["Date", "Storm ID", "Name", "Distance"] # Do we need to print date?
+    out_put_title = 'Assignment_3_question_1.txt'
+    if stop_point == 4:
+        result_table.field_names = ["Date", "Storm ID", "Name", "Distance"]   # Do we need to print date?
+    elif stop_point == 5:
+        result_table.field_names = ["Date", "Storm ID", "Name", "Max Speed", "Avg Speed"]
+        out_put_title = 'Assignment_3_question_2.txt'
+
 
     for storm in result_dict:
-        each_storm_data = result_dict[storm]
+        each_storm_data = result_dict[storm][:stop_point]
         result_table.add_row(each_storm_data)
 
     print(result_table)
 
-    with open('Assignment_3_question_1.txt', 'w') as output_file:
+    with open(out_put_title, 'w') as output_file:
         output_file.write(result_table.get_string())
-
-
-
-    result_table_2 = PrettyTable()
-    result_table_2.field_names = ["Date", "Storm ID", "Name", "Max Speed", "Avg Speed"]
-
-    for storm in result_dict2:
-        each_storm_data = result_dict2[storm]
-        result_table_2.add_row(each_storm_data)
-
-    print(result_table_2)
-
-    with open('Assignment_3_question_2.txt', 'w') as output_file_2:
-        output_file_2.write(result_table_2.get_string())
-
 
 
 def calculate_the_distance(geod, storm_dict, current_latitude: float, current_longitude: float) -> float:
@@ -388,8 +387,8 @@ def find_location_quadrant(storm_latitude: float, storm_longitude: float, locati
 
 "====================================================================================================================="
 "MARK: Program execution"
-
+# hurdat2-1851-2018-120319
 result_dict = {}
-result_dict2 = {}
-process_storm_data("hurdat2-1851-2018-120319.txt", result_dict, result_dict2)
-output_storm_result(result_dict, result_dict2)
+process_storm_data("Test_Data.txt", result_dict)
+output_storm_result(result_dict, 4)
+output_storm_result(result_dict, 5)
