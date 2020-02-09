@@ -1,58 +1,33 @@
 """
-Q1
-variable: start_coordinates, end_coordinates, segment_distance_list, segment_time_list, speed
-start_coordinates = []
-end_coordinates = []
-segment_distance_list = []
-segment_time_list = []
-
-start = last_end
-if start == none, continue
-end = current lat & lon(convert to value) -->function
-total_dist = sum(segment_distance_list)
-output_file1()
-
-Q2
-find_max_speed()
-find_mean_speed()
-output_file2()
-
-Q3
-variable: storm
-storm = {}
-for each row:
-    calculate dist = distance btw storm eye & location
-    if dist <= 5 and wind >=64 append storm ID to storm
-    算location象限: 與颱風眼經緯度相減
-    elif dist <= location象限的暴風半徑 (判斷是否落在該象限的風暴半徑內) append storm ID to storm
-"""
-
-"""
 IS590 PR - Assignment 3
 
 Instructor: Mr. Weible
-Author:  
+Author: Yun-Hsuan Chuang (yhc4) Chien-Ju Chen (chienju2) Alan Chen (ycchen4)
 """
 
 "====================================================================================================================="
 "MARK: Library"
 from geographiclib.geodesic import Geodesic
 from prettytable import PrettyTable
-# import pdb
-"====================================================================================================================="
-"MARK: Constant"
 
+"====================================================================================================================="
+"MARK: Constants"
+
+Storm_Id = "Storm_Id"
+Storm_Name = "Storm_Name"
+Max_Sustained_Wind = "Max_Sustained_Wind"
+Start_Date = "Start_Date"
 Current_Latitude = "current_latitude"
 Current_Longitude = "current_longitude"
 Distance_List = "Distance_List"
-
 Current_Date = "current_date"
 Current_Time_mins = "current_time"
 Time_List = "Time_List"
 Speed_List = "Speed_List"
-
 Question_1 = "Question_1"
 Question_2 = "Question_2"
+hurricanes_raw_data_title_Atlantic = "hurdat2-1851-2018-120319.txt"
+hurricanes_raw_data_title_Pacific = "hurdat2-nepac-1949-2018-122019.txt"
 
 "====================================================================================================================="
 "MARK: Function definition"
@@ -69,7 +44,7 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
     """
     geod = Geodesic.WGS84
     with open(file_name, 'r') as input_file:
-        # initiate a dictionary for the storm
+        # initiate a dictionary for each of the storm
         storm_dict = reset_storm_dict()
 
         current_line_count = 0
@@ -79,13 +54,11 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
 
             # Memorize the id and name, and decide how many lines need to read
             if line[0:2].isalpha():
-                # 1. get the id and name
-                # print('Storm system ID is ' , line[0:4])
-                storm_dict["stormID"] = line[0:8]
+                # Get the id and name
+                storm_dict[Storm_Id] = line[0:8]
 
                 if line.find('UNNAMED', 18, 28) == -1:
-                    # print('the name of the storm is ', line[18:28])
-                    storm_dict["name"] = line[19:28].replace(" ", "")
+                    storm_dict[Storm_Name] = line[19:28].replace(" ", "")
 
                 # set how many lines of this storm data
                 current_line_count = int(line[33:36])
@@ -96,7 +69,6 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             current_line_count -= 1
 
             # get the current latitude and longitude, add up distance (nautical miles) after calculation
-            # print("--------------------")
             current_latitude = get_latitude(line)
             current_longitude = get_longitude(line)
 
@@ -111,9 +83,12 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             # Set the date and time in current row for speed calculation
             current_date, current_time = line[0:8], line[10:14]
 
+            # start date and end date of the storm
+            if storm_dict[Start_Date] is None:
+                storm_dict[Start_Date] = current_date[4:8]
+
             hours = calculate_the_time(storm_dict, current_date, current_time)
             speed = round(calculate_the_speed(distance, hours), 2)
-            # print(hours, distance, speed)
 
             # Add up the total of each time and speed
             storm_dict[Time_List].append(hours)
@@ -123,16 +98,10 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             storm_dict[Current_Date] = current_date
             storm_dict[Current_Time_mins] = current_time
 
-            # 2. start date and end date of the storm
-            if storm_dict["startDate"] is None:
-                storm_dict["startDate"] = line[0:8]
-
-            storm_dict["endDate"] = line[0:8]
-
-            # 3. The highest Maximum sustained wind (in knots)
+            # The highest Maximum sustained wind (in knots)
             current_sustained_wind = int(line[38:41])
-            if current_sustained_wind != "-99" and current_sustained_wind > storm_dict["maxSustainedWind"]:
-                storm_dict["maxSustainedWind"] = current_sustained_wind
+            if current_sustained_wind != "-99" and current_sustained_wind > storm_dict[Max_Sustained_Wind]:
+                storm_dict[Max_Sustained_Wind] = current_sustained_wind
 
             # 64 kt wind radii maximum extent in each quadrant
             storm_dict["NEradii"] = int(line[97:101])
@@ -144,33 +113,32 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             if target_lat != -999 and target_lon != -999 and need_to_check_storm_hit:
                 did_hit = did_storm_hit_location(geod, storm_dict, target_lat, target_lon)
                 if did_hit:
-                    impact_storms.append(storm_dict["stormID"]+storm_dict["name"])
-                    # print("impact_storms",impact_storms)
+                    impact_storms.append(storm_dict[Storm_Id] + storm_dict[Storm_Name])
                     need_to_check_storm_hit = False
-                    # print("need_to_check_storm_hit",need_to_check_storm_hit)
 
             # in the end of each storm section
             if 0 == current_line_count:
                 # print_storm_detail(storm_dict)
 
-                current_storm_id = storm_dict["startDate"] + storm_dict["stormID"] + storm_dict["name"]
+                # Create key for the result_dict
+                current_storm_id = storm_dict[Storm_Id] + storm_dict[Start_Date] + storm_dict[Storm_Name]
 
                 average_speed = 0.0
                 if len(storm_dict[Time_List]) != 1:
                     average_speed = round((sum(storm_dict[Distance_List]) / sum(storm_dict[Time_List])), 2)
 
                 if current_storm_id not in result_dict:
-                    date_string = storm_dict["startDate"]
-                    date_string = date_string[0:4] + "/" + date_string[4:6] + "/" + date_string[6:]
-                    result_dict[current_storm_id] = [date_string,
-                                                     storm_dict["stormID"],
-                                                     storm_dict["name"],
+                    result_dict[current_storm_id] = [
+                                                     storm_dict[Storm_Id],
+                                                     storm_dict[Storm_Name],
                                                      round(sum(storm_dict[Distance_List]), 2),  # distance list
                                                      round(max(storm_dict[Speed_List]), 2),  # max of speed
                                                      average_speed
                                                      ]
                 else:
-                    print("[DEBUG] id is duplicated")
+                    # print("[DEBUG] id is duplicated")
+                    # print("duplicated current_storm_id = ", current_storm_id)
+                    # there is two EP142016 MADELINE in the raw data
 
                 need_to_check_storm_hit = True
                 storm_dict = reset_storm_dict()
@@ -178,27 +146,28 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
 
 def output_storm_result(result_dict, question_type):
     """
-    Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library
-    :param result_dict:
+    Output the result of the storm statistics to a .txt file for the first and second question
+    :param result_dict: a dictionary store storm data
+    :param question_type: Question 1 or 2
     :return: None
     """
 
     result_table = PrettyTable()
 
     out_put_title = 'Assignment_3_question_1.txt'
-    start_point = 3
-    stop_point = 4
+    start_point = 2
+    stop_point = 3
 
     if question_type == Question_1:
-        result_table.field_names = ["Date", "Storm ID", "Name", "Distance"]
+        result_table.field_names = ["Storm ID", "Name", "Distance"]
     elif question_type == Question_2:
-        start_point = 4
-        stop_point = 6
-        result_table.field_names = ["Date", "Storm ID", "Name", "Max Speed", "Avg Speed"]
+        start_point = 3
+        stop_point = 5
+        result_table.field_names = ["Storm ID", "Name", "Max Speed", "Avg Speed"]
         out_put_title = 'Assignment_3_question_2.txt'
 
     for storm in result_dict:
-        each_storm_data = result_dict[storm][0:3] + result_dict[storm][start_point:stop_point]
+        each_storm_data = result_dict[storm][0:2] + result_dict[storm][start_point:stop_point]
         result_table.add_row(each_storm_data)
 
     print(result_table)
@@ -316,11 +285,10 @@ def reset_storm_dict():
     :return: a dictionary of storm-related data
     """
     storm_dict = {
-        "stormID": None,
-        "name": "UNNAMED",
-        "startDate": None,
-        "endDate": None,
-        "maxSustainedWind": 0,
+        Storm_Id: None,
+        Storm_Name: "UNNAMED",
+        Max_Sustained_Wind: 0,
+        Start_Date: None,
         Current_Latitude: -999.0,
         Current_Longitude: -999.0,
         Distance_List: [],
@@ -349,7 +317,7 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
     storm_longitude = storm_dict[Current_Longitude]
     loc_storm_distance = round(geod.Inverse(storm_latitude, storm_longitude,
                                 location_latitude, location_longitude)['s12'] / 1852.0, 2)
-    if loc_storm_distance <= 5 and storm_dict["maxSustainedWind"] >= 64:
+    if loc_storm_distance <= 5 and storm_dict[Max_Sustained_Wind] >= 64:
         return True
 
     location_quadrant = find_location_quadrant(storm_latitude, storm_longitude, location_latitude, location_longitude)
@@ -363,7 +331,6 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
         return True
 
     return False
-
 
 
 def find_location_quadrant(storm_latitude: float, storm_longitude: float, location_latitude: float, location_longitude: float) -> str:
@@ -381,18 +348,43 @@ def find_location_quadrant(storm_latitude: float, storm_longitude: float, locati
     quadrant += "E" if longitude_diff > 0 else "W"
     return quadrant
 
+
 def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
+    """
+    Detect whether the input coordinate is in the coverage of any storm and return a list of it
+    :param lat: latitude of the input coordinate
+    :param lon: longitude of the input coordinate
+    :return: list of storm
+    """
+
     result_dict = {}
     impact_storms = []
-    process_storm_data("hurdat2-1851-2018-120319.txt", result_dict, impact_storms, lat, lon)
-    process_storm_data("hurdat2-nepac-1949-2018-122019.txt", result_dict, impact_storms, lat, lon)
-    print(impact_storms)
+    process_storm_data(hurricanes_raw_data_title_Atlantic, result_dict, impact_storms, lat, lon)
+    process_storm_data(hurricanes_raw_data_title_Pacific, result_dict, impact_storms, lat, lon)
+
+    result_table = PrettyTable()
+    result_table.field_names = ["Storm ID", "Name"]
+
+    for storm_data in impact_storms:
+        result_table.add_row([storm_data[:8], storm_data[8:]])
+
+    with open('Assignment_3_question_3.txt', 'w') as output_file:
+        output_file.write(result_table.get_string())
+
     return impact_storms
+
+
 "====================================================================================================================="
 "MARK: Program execution"
-#
-#result_dict = {}
-#process_storm_data("hurdat2-1851-2018-120319.txt", result_dict)
-# output_storm_result(result_dict, Question_1)
-# output_storm_result(result_dict, Question_2)
+
+# processing the storm
+result_dict = {}
+process_storm_data(hurricanes_raw_data_title_Atlantic, result_dict)
+process_storm_data(hurricanes_raw_data_title_Pacific, result_dict)
+
+# output answers for question 1 and 2
+output_storm_result(result_dict, Question_1)
+output_storm_result(result_dict, Question_2)
+
+# output answers for question 3
 find_hurricanes_hitting_location(32.31, -64.75)
