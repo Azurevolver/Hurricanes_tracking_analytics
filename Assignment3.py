@@ -66,9 +66,9 @@ def process_storm_data(file_name, result_dict):
 
             # Memorize the id and name, and decide how many lines need to read
             if line[0:2].isalpha():
-                # 1. print the id and name
+                # 1. print the id and name --> get the storm id and name?
                 # print('Storm system ID is ' , line[0:4])
-                storm_dict["stormID"] = line[0:4]
+                storm_dict["stormID"] = line[0:4] # Isn't the storm ID the first 8 characters?
 
                 if line.find('UNNAMED', 18, 28) == -1:
                     # print('the name of the storm is ', line[18:28])
@@ -88,7 +88,7 @@ def process_storm_data(file_name, result_dict):
             current_longitude = get_longitude(line)
 
             # Add up the total distance
-            distance= calculate_the_distance(geod, storm_dict, current_latitude, current_longitude)
+            distance = calculate_the_distance(geod, storm_dict, current_latitude, current_longitude)
             storm_dict[Distance_List].append(distance)
 
             # Set the current coordinate
@@ -101,7 +101,7 @@ def process_storm_data(file_name, result_dict):
 
             storm_dict["endDate"] = line[0:8]
 
-            # 3. The highest Maximum sustained wind (in knots) and when it first occurred (date & time)
+            # 3. The highest Maximum sustained wind (in knots) and when it first occurred (date & time) --> get Maximum sustained wind (in knots)?
             current_sustained_wind = int(line[38:41])
             if current_sustained_wind != "-99" and current_sustained_wind > storm_dict["maxSustainedWind"]:
                 storm_dict["maxSustainedWind"] = current_sustained_wind
@@ -124,12 +124,12 @@ def process_storm_data(file_name, result_dict):
 
 def output_storm_result(result_dict):
     """
-    Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library
+    Output the result of the storm statistics to a .txt file for the last question with the help of PrettyTable library --> for the first Q?
     :param result_dict:
     :return: None
     """
     result_table = PrettyTable()
-    result_table.field_names = ["Date", "Storm ID", "Name", "Distance"]
+    result_table.field_names = ["Date", "Storm ID", "Name", "Distance"] # Do we need to print date?
 
     for storm in result_dict:
         each_storm_data = result_dict[storm]
@@ -200,7 +200,7 @@ def get_longitude(line: str) -> float:
     return longitude
 
 
-def print_storm_detail(storm_dict):
+def print_storm_detail(storm_dict): # for debug??
     """
     Print each storm detail on the console
 
@@ -226,7 +226,7 @@ def print_storm_detail(storm_dict):
     # print("The total distance of the storm traveled is ", storm_dict[Distance_List])
 
 
-def print_storm_date(date_string, is_start_date):
+def print_storm_date(date_string, is_start_date): # for debug??
     """
     Print out the date on the console with "YYYY/MM/DD" format
 
@@ -252,11 +252,53 @@ def reset_storm_dict():
         "startDate": None,
         "endDate": None,
         "maxSustainedWind": 0,
-        Current_Latitude: -999.0,
-        Current_Longitude: -999.0,
+        Current_Latitude: -999.0, # Why not use string as the key directly?
+        Current_Longitude: -999.0, # Why not use string as the key directly?
+        "NEradii": -999 # to be added into "process_storm_data" function
+        "SEradii": -999 # to be added into "process_storm_data" function
+        "SWradii": -999 # to be added into "process_storm_data" function
+        "NWradii": -999 # to be added into "process_storm_data" function
         Distance_List: []
     }
     return storm_dict
+
+# not finished yet
+def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_longitude: float) -> bool:
+    """
+    Determine whether the storm hit the location
+    :param geod: Geodesic.WGS84 object
+    :param storm_dict: a dictionary storing storm data
+    :param location_latitude: location latitude
+    :param location_longitude: location longitude
+    :return: a Boolean value; True means the storm hit the location, False means the storm did not hit the location
+    """
+    storm_latitude = storm_dict[Current_Latitude]
+    storm_longitude = storm_dict[Current_Longitude]
+    loc_storm_distance = round(geod.Inverse(storm_latitude, storm_longitude,
+                                location_latitude, location_longitude)['s12'] / 1852.0, 2)
+    if loc_storm_distance <= 5 and storm_dict["maxSustainedWind"] >= 64:
+        return True
+    else:
+        location_quadrant = find_location_quadrant(storm_latitude, storm_longitude, location_latitude: float, location_longitude: float)
+        if location_quadrant == "NE" and :
+
+
+
+def find_location_quadrant(storm_latitude: float, storm_longitude: float, location_latitude: float, location_longitude: float) -> str:
+    """
+    Find the quadrant of the location compared to the storm eye
+    :param storm_latitude: storm eye latitude
+    :param storm_longitude: storm eye longitude
+    :param location_latitude: location latitude
+    :param location_longitude: location longitude
+    :return: a Boolean value; True means the storm hit the location, False means the storm did not hit the location
+    """
+    latitude_diff = location_latitude - storm_latitude
+    longitude_diff = location_longitude - storm_longitude
+    quadrant = "N" if latitude_diff > 0 else "S"
+    quadrant += "E" if longitude_diff > 0 else "W"
+    return quadrant
+
 
 
 "====================================================================================================================="
