@@ -1,0 +1,13 @@
++----------+----------+
+| Storm ID |   Name   |
++----------+----------+
+| AL021922 | UNNAMED  |
+| AL061953 |  DOLLY   |
+| AL011963 |  ARLENE  |
+| AL121987 |  EMILY   |
+| AL072006 | FLORENCE |
+| AL112010 |   IGOR   |
+| AL072014 |   FAY    |
+| AL082014 | GONZALO  |
+| AL152016 |  NICOLE  |
++----------+----------+

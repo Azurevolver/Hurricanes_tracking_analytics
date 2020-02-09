@@ -136,8 +136,7 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
                                                      average_speed
                                                      ]
                 else:
-                    # print("[DEBUG] id is duplicated")
-                    # print("duplicated current_storm_id = ", current_storm_id)
+                    print("[DEBUG] duplicated current_storm_id = ", current_storm_id)
                     # there is two EP142016 MADELINE in the raw data
 
                 need_to_check_storm_hit = True
@@ -154,7 +153,7 @@ def output_storm_result(result_dict, question_type):
 
     result_table = PrettyTable()
 
-    out_put_title = 'Assignment_3_question_1.txt'
+    out_put_title = 'Assignment_3_Answer_for_Q1.txt'
     start_point = 2
     stop_point = 3
 
@@ -164,7 +163,7 @@ def output_storm_result(result_dict, question_type):
         start_point = 3
         stop_point = 5
         result_table.field_names = ["Storm ID", "Name", "Max Speed", "Avg Speed"]
-        out_put_title = 'Assignment_3_question_2.txt'
+        out_put_title = 'Assignment_3_Answer_for_Q2.txt'
 
     for storm in result_dict:
         each_storm_data = result_dict[storm][0:2] + result_dict[storm][start_point:stop_point]
@@ -368,9 +367,10 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
     for storm_data in impact_storms:
         result_table.add_row([storm_data[:8], storm_data[8:]])
 
-    with open('Assignment_3_question_3.txt', 'w') as output_file:
+    with open('Assignment_3_Answer_for_Q3.txt', 'w') as output_file:
         output_file.write(result_table.get_string())
 
+    print("this coordinate can be influenced by this storms:", storm_data)
     return impact_storms
 
 
