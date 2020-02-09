@@ -108,15 +108,14 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             storm_dict[Current_Latitude] = current_latitude
             storm_dict[Current_Longitude] = current_longitude
 
-
-            # for speed calculation:
+            # Set the date and time in current row for speed calculation
             current_date, current_time = line[0:8], line[10:14]
 
             hours = calculate_the_time(storm_dict, current_date, current_time)
             speed = round(calculate_the_speed(distance, hours), 2)
             # print(hours, distance, speed)
 
-            # Add up the total times
+            # Add up the total of each time and speed
             storm_dict[Time_List].append(hours)
             storm_dict[Speed_List].append(speed)
 
@@ -267,18 +266,15 @@ def get_longitude(line: str) -> float:
     return longitude
 
 
-def calculate_the_speed(distance, hours):
-    if hours == 0: return 0
-    speed = distance / hours
-
-    return speed
-
-
 def get_hours(current_date, current_time, last_date, last_time):
-    '''
-    input: current_time
-    output: hours between rows
-    '''
+    """
+    To get the time(hours) between each row.
+    :param current_date: the date of current row of record
+    :param current_time: the time of current row of record
+    :param last_date: the date of last row of record
+    :param last_time: the date of last row of record
+    :return:
+    """
     current_hour, last_hour = int(current_time[0:2]), int(last_time[0:2])
     current_minute, last_minute = int(current_time[2:4]), int(last_time[2:4])
 
@@ -291,16 +287,27 @@ def get_hours(current_date, current_time, last_date, last_time):
 
 
 def calculate_the_time(storm_dict, current_date, current_time):
-
+    """
+    To get the time(hours) between each row.
+    :param storm_dict: the customized dictionary for memorize the necessary storm data
+    :param current_date: the date of current row of record
+    :param current_time: the time of current row of record
+    :return:
+    """
     last_date = storm_dict[Current_Date]
     last_time = storm_dict[Current_Time_mins]
 
     if int(last_date) == 0:
         return 0
 
-
     return get_hours(current_date, current_time, last_date, last_time)
 
+
+def calculate_the_speed(distance, hours):
+    if hours == 0: return 0
+    speed = distance / hours
+
+    return speed
 
 
 def reset_storm_dict():
