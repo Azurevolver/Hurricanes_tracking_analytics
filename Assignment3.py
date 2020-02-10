@@ -22,7 +22,7 @@ from prettytable import PrettyTable
 
 Storm_Id = "Storm_Id"
 Storm_Name = "Storm_Name"
-Max_Sustained_Wind = "Max_Sustained_Wind"
+Sustained_Wind = "Sustained_Wind"
 Start_Date = "Start_Date"
 Current_Latitude = "current_latitude"
 Current_Longitude = "current_longitude"
@@ -106,9 +106,8 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             storm_dict[Current_Time_mins] = current_time
 
             # The highest Maximum sustained wind (in knots)
-            current_sustained_wind = int(line[38:41])
-            if current_sustained_wind != "-99" and current_sustained_wind > storm_dict[Max_Sustained_Wind]:
-                storm_dict[Max_Sustained_Wind] = current_sustained_wind
+
+            storm_dict[Sustained_Wind] = int(line[38:41])
 
             # 64 kt wind radii maximum extent in each quadrant
             storm_dict["NEradii"] = int(line[97:101])
@@ -293,7 +292,7 @@ def reset_storm_dict():
     storm_dict = {
         Storm_Id: None,
         Storm_Name: "UNNAMED",
-        Max_Sustained_Wind: 0,
+        Sustained_Wind: 0,
         Start_Date: None,
         Current_Latitude: -999.0,
         Current_Longitude: -999.0,
@@ -323,7 +322,7 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
     storm_longitude = storm_dict[Current_Longitude]
     loc_storm_distance = round(geod.Inverse(storm_latitude, storm_longitude,
                                 location_latitude, location_longitude)['s12'] / 1852.0, 2)
-    if loc_storm_distance <= 5 and storm_dict[Max_Sustained_Wind] >= 64:
+    if loc_storm_distance <= 5 and storm_dict[Sustained_Wind] >= 64:
         return True
 
     location_quadrant = find_location_quadrant(storm_latitude, storm_longitude, location_latitude, location_longitude)
@@ -363,10 +362,10 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
     :return: list of storm
     """
 
-    result_dict = {}
+    result_dictionary = {}
     impact_storms = []
-    process_storm_data(hurricanes_raw_data_title_Atlantic, result_dict, impact_storms, lat, lon)
-    process_storm_data(hurricanes_raw_data_title_Pacific, result_dict, impact_storms, lat, lon)
+    process_storm_data(hurricanes_raw_data_title_Atlantic, result_dictionary, impact_storms, lat, lon)
+    process_storm_data(hurricanes_raw_data_title_Pacific, result_dictionary, impact_storms, lat, lon)
 
     result_table = PrettyTable()
     result_table.field_names = ["Storm ID", "Name"]
@@ -375,9 +374,10 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
         result_table.add_row([storm_data[:8], storm_data[8:]])
 
     with open('Assignment_3_Answer_for_Q3.txt', 'w') as output_file:
-        output_file.write(result_table.get_string())
+        title = "The target coordinate is: " + str(lat) + " (Latitude), " + str(lon) + "(Longitude) \n"
+        output_file.write(title + result_table.get_string())
 
-    print("this coordinate can be influenced by this storms:", storm_data)
+    print("this coordinate can be influenced by this storms:", impact_storms)
     return impact_storms
 
 
