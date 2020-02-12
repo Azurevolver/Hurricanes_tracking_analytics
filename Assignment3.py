@@ -22,9 +22,10 @@ from prettytable import PrettyTable
 import Storm
 
 "====================================================================================================================="
-"MARK: Function definition"
+"MARK: Functions"
 
-def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = -999, target_lon = -999):
+
+def process_storm_data(file_name, result_dict, impact_storms=[], target_lat=-999, target_lon=-999):
     """
     The main function to read the raw data line by line.
     Meanwhile, the function will find and calculate the five questions in the assignment - ID, name, start date, end date,
@@ -120,12 +121,12 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
 
                 if current_storm_id not in result_dict:
                     result_dict[current_storm_id] = [
-                                                     storm_dict[Storm.Id],
-                                                     storm_dict[Storm.Name],
-                                                     round(sum(storm_dict[Storm.Distance_List]), 2),  # distance list
-                                                     round(max(storm_dict[Storm.Speed_List]), 2),  # max of speed
-                                                     average_speed
-                                                     ]
+                        storm_dict[Storm.Id],
+                        storm_dict[Storm.Name],
+                        round(sum(storm_dict[Storm.Distance_List]), 2),  # distance list
+                        round(max(storm_dict[Storm.Speed_List]), 2),  # max of speed
+                        average_speed
+                    ]
                 else:
                     print("[DEBUG] duplicated current_storm_id = ", current_storm_id)
                     # there is two EP142016 MADELINE in the raw data
@@ -181,7 +182,8 @@ def calculate_the_distance(geod, storm_dict, current_latitude: float, current_lo
     if -999.0 == last_latitude or -999.0 == last_longitude:
         return 0.0
 
-    distance = round(geod.Inverse(last_latitude, last_longitude, current_latitude, current_longitude)['s12'] / 1852.0, 2)
+    distance = round(geod.Inverse(last_latitude, last_longitude, current_latitude, current_longitude)['s12'] / 1852.0,
+                     2)
     # print("the distance(nautical miles) between current coordinate and last coordinate: ", distance)
 
     return distance
@@ -237,7 +239,7 @@ def get_hours(current_date, current_time, last_date, last_time):
     current_hour, last_hour = int(current_time[0:2]), int(last_time[0:2])
     current_minute, last_minute = int(current_time[2:4]), int(last_time[2:4])
 
-    hours = (current_hour - last_hour) + (current_minute - last_minute)/60
+    hours = (current_hour - last_hour) + (current_minute - last_minute) / 60
 
     if current_date != last_date:
         hours = hours + 24
@@ -291,7 +293,7 @@ def reset_storm_dict():
         Storm.Current_Date: 0,
         Storm.Current_Time_mins: 0,
         Storm.Time_List: [],
-        Storm.Speed_List:[],
+        Storm.Speed_List: [],
         "NEradii": -999,
         "SEradii": -999,
         "SWradii": -999,
@@ -312,7 +314,7 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
     storm_latitude = storm_dict[Storm.Current_Latitude]
     storm_longitude = storm_dict[Storm.Current_Longitude]
     loc_storm_distance = round(geod.Inverse(storm_latitude, storm_longitude,
-                                location_latitude, location_longitude)['s12'] / 1852.0, 2)
+                                            location_latitude, location_longitude)['s12'] / 1852.0, 2)
     if loc_storm_distance <= 5 and storm_dict[Storm.Sustained_Wind] >= 64:
         return True
 
@@ -329,7 +331,8 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
     return False
 
 
-def find_location_quadrant(storm_latitude: float, storm_longitude: float, location_latitude: float, location_longitude: float) -> str:
+def find_location_quadrant(storm_latitude: float, storm_longitude: float, location_latitude: float,
+                           location_longitude: float) -> str:
     """
     Find the quadrant of the location compared to the storm eye
     :param storm_latitude: storm eye latitude
@@ -375,14 +378,15 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
 "====================================================================================================================="
 "MARK: Program execution"
 
-# processing the storm
-result_dict = {}
-process_storm_data(Storm.Hurricanes_raw_data_title_Atlantic, result_dict)
-process_storm_data(Storm.Hurricanes_raw_data_title_Pacific, result_dict)
+if __name__ == '__main__':
+    # processing the storm
+    result_dict = {}
+    process_storm_data(Storm.Hurricanes_raw_data_title_Atlantic, result_dict)
+    process_storm_data(Storm.Hurricanes_raw_data_title_Pacific, result_dict)
 
-# output answers for question 1 and 2
-output_storm_result(result_dict, Storm.Question_1)
-output_storm_result(result_dict, Storm.Question_2)
+    # output answers for question 1 and 2
+    output_storm_result(result_dict, Storm.Question_1)
+    output_storm_result(result_dict, Storm.Question_2)
 
-# output answers for question 3
-find_hurricanes_hitting_location(32.31, -64.75)
+    # output answers for question 3
+    find_hurricanes_hitting_location(32.31, -64.75)
