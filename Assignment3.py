@@ -355,9 +355,20 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
     :param lon: longitude of the input coordinate
     :return: list of storm
     """
+    if type(lat) is not float or type(lon) is not float:
+        print("Error: latitude and longitude should be the float type")
+        return
+
+    if lat < -90 or lat > 90:
+        print("Error: latitude is out of range")
+        return
+    elif lon > 180 or lon < -180:
+        print("Error: longtitude is out of range")
+        return
 
     result_dictionary = {}
     impact_storms = []
+
     process_storm_data(Storm.Hurricanes_raw_data_title_Atlantic, result_dictionary, impact_storms, lat, lon)
     process_storm_data(Storm.Hurricanes_raw_data_title_Pacific, result_dictionary, impact_storms, lat, lon)
 
@@ -371,7 +382,8 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
         title = "The target coordinate is: " + str(lat) + " (Latitude), " + str(lon) + "(Longitude) \n"
         output_file.write(title + result_table.get_string())
 
-    print("this coordinate can be influenced by this storms:", impact_storms)
+    print("this coordinate can be influenced by these storms:", impact_storms)
+
     return impact_storms
 
 
@@ -379,7 +391,7 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
 "MARK: Program execution"
 
 if __name__ == '__main__':
-    # processing the storm
+    # process the storm data and save the calculated result for question 1 and 2
     result_dict = {}
     process_storm_data(Storm.Hurricanes_raw_data_title_Atlantic, result_dict)
     process_storm_data(Storm.Hurricanes_raw_data_title_Pacific, result_dict)
