@@ -232,7 +232,7 @@ def get_hours(current_date, current_time, last_date, last_time):
     :param current_time: the time of current row of record
     :param last_date: the date of last row of record
     :param last_time: the date of last row of record
-    :return:
+    :return: the time between each row in hour
     """
     current_hour, last_hour = int(current_time[0:2]), int(last_time[0:2])
     current_minute, last_minute = int(current_time[2:4]), int(last_time[2:4])
@@ -251,7 +251,7 @@ def calculate_the_time(storm_dict, current_date, current_time):
     :param storm_dict: the customized dictionary for memorize the necessary storm data
     :param current_date: the date of current row of record
     :param current_time: the time of current row of record
-    :return:
+    :return: the time between each record(each row) in hour
     """
     last_date = storm_dict[Storm.Current_Date]
     last_time = storm_dict[Storm.Current_Time_mins]
@@ -263,6 +263,12 @@ def calculate_the_time(storm_dict, current_date, current_time):
 
 
 def calculate_the_speed(distance, hours):
+    """
+    To calculate the speed by distance / hours
+    :param distance: the distance between two records
+    :param hours: the time passed between two records
+    :return: the speed during each record
+    """
     if hours == 0: return 0
     speed = distance / hours
 
