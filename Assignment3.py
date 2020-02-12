@@ -227,7 +227,7 @@ def get_longitude(line: str) -> float:
 
 def get_hours(current_date, current_time, last_date, last_time):
     """
-    To get the time(hours) between each row.
+    To get the time(in hours) between each row.
     :param current_date: the date of current row of record
     :param current_time: the time of current row of record
     :param last_date: the date of last row of record
@@ -247,11 +247,11 @@ def get_hours(current_date, current_time, last_date, last_time):
 
 def calculate_the_time(storm_dict, current_date, current_time):
     """
-    To get the time(hours) between each row.
+    To get the time(in hours) between each row.
     :param storm_dict: the customized dictionary for memorize the necessary storm data
     :param current_date: the date of current row of record
     :param current_time: the time of current row of record
-    :return: the time between each record(each row) in hour
+    :return: the time(in hours) between each record
     """
     last_date = storm_dict[Storm.Current_Date]
     last_time = storm_dict[Storm.Current_Time_mins]
