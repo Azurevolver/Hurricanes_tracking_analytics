@@ -345,7 +345,7 @@ def find_location_quadrant(storm_latitude: float, storm_longitude: float, locati
     :param storm_longitude: storm eye longitude
     :param location_latitude: location latitude
     :param location_longitude: location longitude
-    :return: a Boolean value; True means the storm hit the location, False means the storm did not hit the location
+    :return: the quadrant of the location compared to the storm eye in string type
     """
     latitude_diff = location_latitude - storm_latitude
     longitude_diff = location_longitude - storm_longitude
