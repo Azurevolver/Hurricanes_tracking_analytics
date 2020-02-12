@@ -19,22 +19,7 @@ from prettytable import PrettyTable
 
 "====================================================================================================================="
 "MARK: Constants"
-
-Storm_Id = "Storm_Id"
-Storm_Name = "Storm_Name"
-Sustained_Wind = "Sustained_Wind"
-Start_Date = "Start_Date"
-Current_Latitude = "current_latitude"
-Current_Longitude = "current_longitude"
-Distance_List = "Distance_List"
-Current_Date = "current_date"
-Current_Time_mins = "current_time"
-Time_List = "Time_List"
-Speed_List = "Speed_List"
-Question_1 = "Question_1"
-Question_2 = "Question_2"
-hurricanes_raw_data_title_Atlantic = "hurdat2-1851-2018-120319.txt"
-hurricanes_raw_data_title_Pacific = "hurdat2-nepac-1949-2018-122019.txt"
+import Storm
 
 "====================================================================================================================="
 "MARK: Function definition"
@@ -62,10 +47,10 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             # Memorize the id and name, and decide how many lines need to read
             if line[0:2].isalpha():
                 # Get the id and name
-                storm_dict[Storm_Id] = line[0:8]
+                storm_dict[Storm.Id] = line[0:8]
 
                 if line.find('UNNAMED', 18, 28) == -1:
-                    storm_dict[Storm_Name] = line[19:28].replace(" ", "")
+                    storm_dict[Storm.Name] = line[19:28].replace(" ", "")
 
                 # set how many lines of this storm data
                 current_line_count = int(line[33:36])
@@ -81,33 +66,33 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
 
             # Add up the total distance
             distance = calculate_the_distance(geod, storm_dict, current_latitude, current_longitude)
-            storm_dict[Distance_List].append(distance)
+            storm_dict[Storm.Distance_List].append(distance)
 
             # Set the current coordinate
-            storm_dict[Current_Latitude] = current_latitude
-            storm_dict[Current_Longitude] = current_longitude
+            storm_dict[Storm.Current_Latitude] = current_latitude
+            storm_dict[Storm.Current_Longitude] = current_longitude
 
             # Set the date and time in current row for speed calculation
             current_date, current_time = line[0:8], line[10:14]
 
             # start date and end date of the storm
-            if storm_dict[Start_Date] is None:
-                storm_dict[Start_Date] = current_date[4:8]
+            if storm_dict[Storm.Start_Date] is None:
+                storm_dict[Storm.Start_Date] = current_date[4:8]
 
             hours = calculate_the_time(storm_dict, current_date, current_time)
             speed = round(calculate_the_speed(distance, hours), 2)
 
             # Add up the total of each time and speed
-            storm_dict[Time_List].append(hours)
-            storm_dict[Speed_List].append(speed)
+            storm_dict[Storm.Time_List].append(hours)
+            storm_dict[Storm.Speed_List].append(speed)
 
             # Set the current time
-            storm_dict[Current_Date] = current_date
-            storm_dict[Current_Time_mins] = current_time
+            storm_dict[Storm.Current_Date] = current_date
+            storm_dict[Storm.Current_Time_mins] = current_time
 
             # The highest Maximum sustained wind (in knots)
 
-            storm_dict[Sustained_Wind] = int(line[38:41])
+            storm_dict[Storm.Sustained_Wind] = int(line[38:41])
 
             # 64 kt wind radii maximum extent in each quadrant
             storm_dict["NEradii"] = int(line[97:101])
@@ -119,7 +104,7 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
             if target_lat != -999 and target_lon != -999 and need_to_check_storm_hit:
                 did_hit = did_storm_hit_location(geod, storm_dict, target_lat, target_lon)
                 if did_hit:
-                    impact_storms.append(storm_dict[Storm_Id] + storm_dict[Storm_Name])
+                    impact_storms.append(storm_dict[Storm.Id] + storm_dict[Storm.Name])
                     need_to_check_storm_hit = False
 
             # in the end of each storm section
@@ -127,18 +112,18 @@ def process_storm_data(file_name, result_dict, impact_storms = [], target_lat = 
                 # print_storm_detail(storm_dict)
 
                 # Create key for the result_dict
-                current_storm_id = storm_dict[Storm_Id] + storm_dict[Start_Date] + storm_dict[Storm_Name]
+                current_storm_id = storm_dict[Storm.Id] + storm_dict[Storm.Start_Date] + storm_dict[Storm.Name]
 
                 average_speed = 0.0
-                if len(storm_dict[Time_List]) != 1:
-                    average_speed = round((sum(storm_dict[Distance_List]) / sum(storm_dict[Time_List])), 2)
+                if len(storm_dict[Storm.Time_List]) != 1:
+                    average_speed = round((sum(storm_dict[Storm.Distance_List]) / sum(storm_dict[Storm.Time_List])), 2)
 
                 if current_storm_id not in result_dict:
                     result_dict[current_storm_id] = [
-                                                     storm_dict[Storm_Id],
-                                                     storm_dict[Storm_Name],
-                                                     round(sum(storm_dict[Distance_List]), 2),  # distance list
-                                                     round(max(storm_dict[Speed_List]), 2),  # max of speed
+                                                     storm_dict[Storm.Id],
+                                                     storm_dict[Storm.Name],
+                                                     round(sum(storm_dict[Storm.Distance_List]), 2),  # distance list
+                                                     round(max(storm_dict[Storm.Speed_List]), 2),  # max of speed
                                                      average_speed
                                                      ]
                 else:
@@ -163,9 +148,9 @@ def output_storm_result(result_dict, question_type):
     start_point = 2
     stop_point = 3
 
-    if question_type == Question_1:
+    if question_type == Storm.Question_1:
         result_table.field_names = ["Storm ID", "Name", "Distance"]
-    elif question_type == Question_2:
+    elif question_type == Storm.Question_2:
         start_point = 3
         stop_point = 5
         result_table.field_names = ["Storm ID", "Name", "Max Speed", "Avg Speed"]
@@ -190,8 +175,8 @@ def calculate_the_distance(geod, storm_dict, current_latitude: float, current_lo
     :param current_longitude: current longitude
     :return: The distance (nautical miles) from last coordinate to current coordinate
     """
-    last_latitude = storm_dict[Current_Latitude]
-    last_longitude = storm_dict[Current_Longitude]
+    last_latitude = storm_dict[Storm.Current_Latitude]
+    last_longitude = storm_dict[Storm.Current_Longitude]
 
     if -999.0 == last_latitude or -999.0 == last_longitude:
         return 0.0
@@ -268,8 +253,8 @@ def calculate_the_time(storm_dict, current_date, current_time):
     :param current_time: the time of current row of record
     :return:
     """
-    last_date = storm_dict[Current_Date]
-    last_time = storm_dict[Current_Time_mins]
+    last_date = storm_dict[Storm.Current_Date]
+    last_time = storm_dict[Storm.Current_Time_mins]
 
     if int(last_date) == 0:
         return 0
@@ -290,17 +275,17 @@ def reset_storm_dict():
     :return: a dictionary of storm-related data
     """
     storm_dict = {
-        Storm_Id: None,
-        Storm_Name: "UNNAMED",
-        Sustained_Wind: 0,
-        Start_Date: None,
-        Current_Latitude: -999.0,
-        Current_Longitude: -999.0,
-        Distance_List: [],
-        Current_Date: 0,
-        Current_Time_mins: 0,
-        Time_List: [],
-        Speed_List:[],
+        Storm.Id: None,
+        Storm.Name: "UNNAMED",
+        Storm.Sustained_Wind: 0,
+        Storm.Start_Date: None,
+        Storm.Current_Latitude: -999.0,
+        Storm.Current_Longitude: -999.0,
+        Storm.Distance_List: [],
+        Storm.Current_Date: 0,
+        Storm.Current_Time_mins: 0,
+        Storm.Time_List: [],
+        Storm.Speed_List:[],
         "NEradii": -999,
         "SEradii": -999,
         "SWradii": -999,
@@ -318,11 +303,11 @@ def did_storm_hit_location(geod, storm_dict, location_latitude: float, location_
     :param location_longitude: location longitude
     :return: a Boolean value; True means the storm hit the location, False means the storm did not hit the location
     """
-    storm_latitude = storm_dict[Current_Latitude]
-    storm_longitude = storm_dict[Current_Longitude]
+    storm_latitude = storm_dict[Storm.Current_Latitude]
+    storm_longitude = storm_dict[Storm.Current_Longitude]
     loc_storm_distance = round(geod.Inverse(storm_latitude, storm_longitude,
                                 location_latitude, location_longitude)['s12'] / 1852.0, 2)
-    if loc_storm_distance <= 5 and storm_dict[Sustained_Wind] >= 64:
+    if loc_storm_distance <= 5 and storm_dict[Storm.Sustained_Wind] >= 64:
         return True
 
     location_quadrant = find_location_quadrant(storm_latitude, storm_longitude, location_latitude, location_longitude)
@@ -364,8 +349,8 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
 
     result_dictionary = {}
     impact_storms = []
-    process_storm_data(hurricanes_raw_data_title_Atlantic, result_dictionary, impact_storms, lat, lon)
-    process_storm_data(hurricanes_raw_data_title_Pacific, result_dictionary, impact_storms, lat, lon)
+    process_storm_data(Storm.Hurricanes_raw_data_title_Atlantic, result_dictionary, impact_storms, lat, lon)
+    process_storm_data(Storm.Hurricanes_raw_data_title_Pacific, result_dictionary, impact_storms, lat, lon)
 
     result_table = PrettyTable()
     result_table.field_names = ["Storm ID", "Name"]
@@ -386,12 +371,12 @@ def find_hurricanes_hitting_location(lat: float, lon: float) -> list:
 
 # processing the storm
 result_dict = {}
-process_storm_data(hurricanes_raw_data_title_Atlantic, result_dict)
-process_storm_data(hurricanes_raw_data_title_Pacific, result_dict)
+process_storm_data(Storm.Hurricanes_raw_data_title_Atlantic, result_dict)
+process_storm_data(Storm.Hurricanes_raw_data_title_Pacific, result_dict)
 
 # output answers for question 1 and 2
-output_storm_result(result_dict, Question_1)
-output_storm_result(result_dict, Question_2)
+output_storm_result(result_dict, Storm.Question_1)
+output_storm_result(result_dict, Storm.Question_2)
 
 # output answers for question 3
 find_hurricanes_hitting_location(32.31, -64.75)
