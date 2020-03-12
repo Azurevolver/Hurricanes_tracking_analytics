@@ -1,4 +1,4 @@
-# Assignment3
+# Hurricanes tracking analytics
 
 IS590 PR - Assignment 3
 Instructor: Mr. Weible
